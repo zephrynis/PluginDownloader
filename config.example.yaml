@@ -1,0 +1,17 @@
+check_interval: 3600 # Check every hour
+
+plugins:
+  - name: "EssentialsX"
+    source: "github"
+    repo: "EssentialsX/Essentials"
+    # asset_regex: "EssentialsX-.*.jar" # Optional regex to match specific asset
+
+  - name: "FastAsyncWorldEdit"
+    source: "modrinth"
+    id: "fawe" # Project ID or Slug
+    loader: "spigot" # Optional: fabric, forge, spigot
+    game_version: "1.20.4" # Optional
+
+  - name: "Vault"
+    source: "spigot"
+    id: "34315" # Resource ID from URL
