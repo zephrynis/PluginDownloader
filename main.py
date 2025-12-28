@@ -102,7 +102,7 @@ def get_modrinth_latest(project_id, loader=None, game_version=None):
         logger.error(f"Error checking Modrinth {project_id}: {e}")
     return None, None
 
-def get_spiget_latest(resource_id):
+def get_spiget_latest(resource_id, plugin_name=None):
     try:
         # Get latest version info
         url = f"https://api.spiget.org/v2/resources/{resource_id}/versions/latest"
@@ -119,7 +119,9 @@ def get_spiget_latest(resource_id):
         # Let's try a HEAD request to download_url to get filename
         
         head_resp = requests.head(download_url, allow_redirects=True)
-        filename = f"{resource_id}-{version_data['name']}.jar" # Fallback
+        
+        base_name = plugin_name if plugin_name else resource_id
+        filename = f"{base_name}-{version_data['name']}.jar" # Fallback
         
         if 'content-disposition' in head_resp.headers:
             cd = head_resp.headers['content-disposition']
@@ -147,7 +149,7 @@ def process_plugin(plugin, state):
     elif source == 'modrinth':
         filename, download_url = get_modrinth_latest(plugin['id'], plugin.get('loader'), plugin.get('game_version'))
     elif source == 'spigot':
-        filename, download_url = get_spiget_latest(plugin['id'])
+        filename, download_url = get_spiget_latest(plugin['id'], name)
     
     if not filename or not download_url:
         logger.warning(f"Could not resolve update for {name}")
