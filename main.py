@@ -199,24 +199,51 @@ def main():
         
     logger.info("Starting Plugin Updater...")
     
+    last_config_mtime = 0
+    last_check_time = 0
+    config = None
+    
     while True:
-        config = load_config()
-        if not config:
-            logger.warning("No config found, sleeping...")
-            time.sleep(60)
-            continue
+        # Check for config file changes
+        try:
+            current_mtime = 0
+            if os.path.exists(CONFIG_FILE):
+                current_mtime = os.path.getmtime(CONFIG_FILE)
             
-        state = load_state()
-        
-        for plugin in config.get('plugins', []):
-            try:
-                process_plugin(plugin, state)
-            except Exception as e:
-                logger.error(f"Error processing {plugin.get('name')}: {e}")
+            if current_mtime != last_config_mtime:
+                logger.info("Config file changed or initial load. Reloading...")
+                new_config = load_config()
+                if new_config:
+                    config = new_config
+                    last_config_mtime = current_mtime
+                    # Force an immediate check on config change
+                    last_check_time = 0
+                else:
+                    logger.warning("Config file found but failed to load or is empty.")
+            
+        except Exception as e:
+            logger.error(f"Error checking config file: {e}")
+
+        if config:
+            interval = config.get('check_interval', 3600)
+            
+            # Check if it's time to run updates
+            if time.time() - last_check_time >= interval:
+                state = load_state()
                 
-        interval = config.get('check_interval', 3600)
-        logger.info(f"Sleeping for {interval} seconds...")
-        time.sleep(interval)
+                for plugin in config.get('plugins', []):
+                    try:
+                        process_plugin(plugin, state)
+                    except Exception as e:
+                        logger.error(f"Error processing {plugin.get('name')}: {e}")
+                
+                last_check_time = time.time()
+                logger.info(f"Check complete. Next check in ~{interval} seconds.")
+        else:
+            if last_config_mtime == 0:
+                 logger.warning("Waiting for valid configuration...")
+
+        time.sleep(5)
 
 if __name__ == "__main__":
     main()
